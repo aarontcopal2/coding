@@ -10,34 +10,75 @@
 
 using namespace std;
 
-
-int max_consecutive_chars (const vector<int> &height) {
-    // Given the heights of towers, return the size of largest container.
-    // A container is the rectangular space between two towers.
-    // This problem is a variation of trapping_rainwater.cpp
-    // TC: O(N), SC: O(1)
-
-    int i = 0;
-    int j = height.size() -1;
-    int max_area = INT_MIN;
-    while (i < j) {
-        // area = height  * width
-        int curr_area = min(height[i], height[j]) * (j-i);
-        max_area = max(curr_area, max_area);
-        if (height[i] < height[j]) {
-            i++;
+int count_consecutive_ones (const vector<int> &sequence) {
+    int max_consec = INT_MIN, count = 0;
+    for (int j=0; j<sequence.size(); j++) {   
+        if (sequence[j] == 1) {
+            count++;
         } else {
-            j--;
+            max_consec = max(max_consec, count);
+            count = 0;
+        }
+    }
+    max_consec = max(max_consec, count);
+    return max_consec;
+}
+
+int max_consecutive_chars_1 (vector<int> sequence, int flips, int i=0) {
+    // This is a brute_force approach.
+    // TC: O(2^n), SC: O(n*2^n)
+
+    if (flips == 0) {
+        return count_consecutive_ones(sequence);
+    }
+
+    vector<int> new_sequence;
+    int branch_max = INT_MIN;
+    for (int j=i; j<sequence.size(); j++) {
+        
+        if (sequence[j] == 0) {
+            new_sequence = sequence;
+            new_sequence[j] = 1;
+            branch_max = max(branch_max, max_consecutive_chars_1 (new_sequence, flips-1, j+1));
         }
     }
 
-    return max_area;
+    int curr_max = count_consecutive_ones(sequence);
+    return max(curr_max, branch_max);
 }
 
-int main() {
-    int result = max_consecutive_chars({1, 4, 5, 8, 10});
-    ASSERT(result, ==, 12);
+int max_consecutive_chars_2 (vector<int> sequence, int flips) {
+    // This is a sliding window approach.
+    if (flips == 0) {
+        return count_consecutive_ones(sequence);
+    }
 
-    result = max_consecutive_chars({1, 8, 6, 2, 5, 4, 8, 3, 7});
-    ASSERT(result, ==, 49);
+    vector<int> zero_indices;
+    zero_indices.push_back(-1);
+    for (int i=0; i<sequence.size(); i++) {
+        if (sequence[i] == 0) {
+            zero_indices.push_back(i);
+        }
+    }
+    zero_indices.push_back((int)sequence.size());
+
+    int count;
+    int curr_max = INT_MIN;
+    int j = 0;
+    for (int i=1; i<zero_indices.size(), j<zero_indices.size()-2; i++) {
+        j = min(i+flips-1, (int) zero_indices.size()-2);
+        count = zero_indices[j+1] - zero_indices[i-1] - 1;
+        curr_max = max(count, curr_max);
+    }
+
+    return curr_max;
+}
+
+
+int main() {
+    int result = max_consecutive_chars_2({1,1,1,0,0,0,1,1,1,1,0}, 2);
+    ASSERT(result, ==, 6);
+
+    result = max_consecutive_chars_2({0,0,1,1,0,0,1,1,1,0,1,1,0,0,0,1,1,1,1}, 3);
+    ASSERT(result, ==, 10);
 }
